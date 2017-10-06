@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">Big Foot Tracker</string>
+    <string name="username">Username/email</string>
+    <string name="password">Password</string>
+    <string name="login">Let me in!</string>
+    <string name="dashboard">Dashboard</string>
+    <string name="preferences">Preferences</string>
+    <string name="map">Map</string>
+    <string name="altitude">Altitude</string>
+    <string name="altitude_fragment">Altitude Fragment</string>
+    <string name="map_fragment">Map Fragment</string>
+    <string name="title_location_permission">Location Permission</string>
+    <string name="text_location_permission">App needs location permission</string>
+    <string name="ok">OK</string>
+</resources>
