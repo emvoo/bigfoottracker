@@ -1,8 +1,8 @@
 <resources>
     <string name="app_name">Big Foot Tracker</string>
-    <string name="username">Username/email</string>
+    <string name="email">Email</string>
     <string name="password">Password</string>
-    <string name="login">Let me in!</string>
+    <string name="register">REGISTER</string>
     <string name="dashboard">Dashboard</string>
     <string name="preferences">Preferences</string>
     <string name="map">Map</string>
@@ -12,4 +12,8 @@
     <string name="title_location_permission">Location Permission</string>
     <string name="text_location_permission">App needs location permission</string>
     <string name="ok">OK</string>
+    <string name="today_total">Today total</string>
+    <string name="total">Total</string>
+    <string name="distance">Distance</string>
+    <string name="calories">Calories</string>
 </resources>
