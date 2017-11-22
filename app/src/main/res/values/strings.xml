@@ -16,4 +16,6 @@
     <string name="total">Total</string>
     <string name="distance">Distance</string>
     <string name="calories">Calories</string>
+    <string name="action_share">Share</string>
+    <string name="action_settings">Settings</string>
 </resources>
