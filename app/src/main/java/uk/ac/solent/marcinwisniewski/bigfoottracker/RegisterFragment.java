@@ -3,6 +3,7 @@ package uk.ac.solent.marcinwisniewski.bigfoottracker;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -44,7 +45,8 @@ public class RegisterFragment extends Fragment {
         @Override
         public void onClick(View view) {
             String name = getValue(email);
-            String pw = getValue(password);
+            // hash password
+            String pw = MD5(getValue(password));
             userDB = ((MainActivity) getActivity()).userDB;
             // validate entered data
             if (validateUsername(name) && validatePassword(pw)) {
@@ -65,6 +67,21 @@ public class RegisterFragment extends Fragment {
             }
         }
     };
+
+    private String MD5(String pw) {
+        try {
+            java.security.MessageDigest messageDigest = java.security.MessageDigest.getInstance("MD5");
+            byte[] array = messageDigest.digest(pw.getBytes());
+            StringBuffer stringBuffer = new StringBuffer();
+            for (int i = 0; i < array.length; ++i) {
+                stringBuffer.append(Integer.toHexString((array[i] & 0xFF) | 0x100).substring(1,3));
+            }
+            return stringBuffer.toString();
+        } catch (java.security.NoSuchAlgorithmException e) {
+            Log.e("RegisterFragment", e.getMessage());
+        }
+        return null;
+    }
 
     /**
      * Helper function to retrieve string value from any EditText field.

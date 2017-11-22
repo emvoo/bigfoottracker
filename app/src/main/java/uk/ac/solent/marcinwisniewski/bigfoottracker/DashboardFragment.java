@@ -1,6 +1,5 @@
 package uk.ac.solent.marcinwisniewski.bigfoottracker;
 
-import android.database.Cursor;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -8,7 +7,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import java.util.Date;
+
 import uk.ac.solent.marcinwisniewski.bigfoottracker.db.StepsDB;
+import uk.ac.solent.marcinwisniewski.bigfoottracker.repositories.DateTimeRepository;
 
 public class DashboardFragment extends Fragment {
     private TextView todayTotal, todayDistance, todayCalories, total, distance, calories;
@@ -19,16 +21,11 @@ public class DashboardFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.dashboard_fragment, container, false);
         init(view);
-        setValues();
+        updateDashboardFields();
         return view;
     }
 
-    private void setValues() {
-//        totalToday =
-    }
-
     private void init(View view) {
-//        userDb =
         todayTotal = view.findViewById(R.id.todayTotal);
         todayDistance = view.findViewById(R.id.todayDistance);
         todayCalories = view.findViewById(R.id.todayCalories);
@@ -38,12 +35,12 @@ public class DashboardFragment extends Fragment {
         stepsDB = ((MainActivity) getActivity()).stepsDB;
     }
 
-    public void setTodayTotal(int todayTotal) {
+    public void setTodayTotal(long todayTotal) {
         String value = todayTotal + " steps";
         this.todayTotal.setText(value);
     }
 
-    public void setTodayDistance(int todayDistance) {
+    public void setTodayDistance(double todayDistance) {
         String value = todayDistance + METRIC_TYPE;
         this.todayDistance.setText(value);
     }
@@ -53,12 +50,12 @@ public class DashboardFragment extends Fragment {
         this.todayCalories.setText(value);
     }
 
-    public void setTotal(int total) {
+    public void setTotal(long total) {
         String value = total + " steps";
         this.total.setText(value);
     }
 
-    public void setDistance(int distance) {
+    public void setDistance(double distance) {
         String value = distance + METRIC_TYPE;
         this.distance.setText(value);
     }
@@ -70,8 +67,34 @@ public class DashboardFragment extends Fragment {
 
     public void updateDashboardFields()
     {
+        // today's fields
+        DateTimeRepository dtr = new DateTimeRepository();
+        String today = dtr.parseDate(new Date());
+        long todaySteps = stepsDB.countAllStepsByDay(today);
+        setTodayTotal(todaySteps);
 
-//        Cursor cursor = stepsDB.countAllStepsByDay();
-//        setTodayTotal();
+        double todayDist = stepsDB.countDistanceByDay(today);
+        setTodayDistance(todayDist);
+
+        int todayKcal = calculateCalories(todaySteps);
+        setTodayCalories(todayKcal);
+
+        // total fields
+        long steps = stepsDB.countAllSteps();
+        setTotal(steps);
+
+        double totalDistance = stepsDB.countDistance();
+        setDistance(totalDistance);
+
+        int totalCalories = calculateCalories(steps);
+        setCalories(totalCalories);
+    }
+
+    /**
+     * Calculates calories based on number of steps.
+     * We burn about kcal per every 20 steps.
+     */
+    private int calculateCalories(long steps) {
+        return (int)steps/20;
     }
 }

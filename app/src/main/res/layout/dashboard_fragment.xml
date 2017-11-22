@@ -20,12 +20,12 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:ems="10"
-            android:inputType="textPersonName"
-            android:paddingStart="10dp"
-            android:paddingLeft="10dp"
-            android:text="Today's summary"
-            android:textAlignment="textStart"
             android:gravity="start"
+            android:inputType="textPersonName"
+            android:paddingLeft="10dp"
+            android:paddingStart="10dp"
+            android:text="Day summary"
+            android:textAlignment="textStart"
             android:textSize="24sp"
             android:textStyle="bold" />
     </LinearLayout>

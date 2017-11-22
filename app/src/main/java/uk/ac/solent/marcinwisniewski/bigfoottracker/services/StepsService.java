@@ -11,14 +11,11 @@ import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
 
-import uk.ac.solent.marcinwisniewski.bigfoottracker.db.StepsDB;
-import uk.ac.solent.marcinwisniewski.bigfoottracker.repositories.DateTimeRepository;
-
 public class StepsService extends Service implements SensorEventListener {
 
     private SensorManager sensorManager;
     private Sensor stepDetectorSensor;
-    private StepsDB stepsDB;
+    private int counter = 0;
 
     @Override
     public void onCreate() {
@@ -31,7 +28,6 @@ public class StepsService extends Service implements SensorEventListener {
                     sensorManager.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR);
             sensorManager.registerListener(this, stepDetectorSensor, SensorManager.SENSOR_DELAY_NORMAL);
         }
-        stepsDB = new StepsDB(this);
     }
 
     @Override
@@ -57,7 +53,12 @@ public class StepsService extends Service implements SensorEventListener {
 
     private void sendMessage() {
         Intent intent = new Intent("new-step");
-        intent.putExtra("message", "This is my message!");
-        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+        intent.putExtra("message", "New step taken!");
+
+        counter++;
+        if (counter == 2) {
+            LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+            counter = 0;
+        }
     }
 }

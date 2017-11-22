@@ -8,6 +8,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -26,16 +27,29 @@ import android.util.Log;
 import android.view.MenuItem;
 import android.widget.Toast;
 
+import org.osmdroid.util.GeoPoint;
+
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import uk.ac.solent.marcinwisniewski.bigfoottracker.db.StepsDB;
 import uk.ac.solent.marcinwisniewski.bigfoottracker.db.UserDetailsDB;
+import uk.ac.solent.marcinwisniewski.bigfoottracker.repositories.DateTimeRepository;
 import uk.ac.solent.marcinwisniewski.bigfoottracker.services.StepsService;
 
-public class MainActivity extends AppCompatActivity {
+import static android.R.attr.id;
 
+public class MainActivity extends AppCompatActivity {
+    // TODO add actions to toolbar
+        // actions going to be share with
+        // export (might be part of share)
+        // select date on map or everywhere
+        // add tabs to dashboard (day view, total view)
+    // TODO navigation drawer add 3 horizontal lines icon to open app drawer
+    // TODO add notifications
+    // TODO add preferences file
+    // TODO app icon (different sizes)
+    // TODO on landscape (big screen) pin navigation drawer (dont hide it)
     private DrawerLayout drawerLayout;
     private int item_id;
     public UserDetailsDB userDB;
@@ -46,6 +60,7 @@ public class MainActivity extends AppCompatActivity {
     private LocationManager locationManager;
     private boolean isGPSEnabled = false;
     private double latitude, longitude, altitude;
+    private Location previousStepLocation, nextStepLocation;
 
     private String[] permissions= new String[]{
             Manifest.permission.WRITE_EXTERNAL_STORAGE,
@@ -262,7 +277,6 @@ public class MainActivity extends AppCompatActivity {
         } catch (SecurityException e) {
             String error = "Location could not be updated for the following reasons: " + e.getMessage();
             Log.e("MainActivity", error);
-            Toast.makeText(this, error, Toast.LENGTH_LONG).show();
         }
     }
 
@@ -274,6 +288,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onLocationChanged(Location location) {
             updateLoc(location);
+            centerMap();
         }
 
         @Override
@@ -360,11 +375,10 @@ public class MainActivity extends AppCompatActivity {
         String tag = "";
         String[] parts = clsName.split("(?=[A-Z])");
         tag = parts[1].toLowerCase();
-        displayToast(tag);
         return tag;
     }
 
-    public void displayToast(String message) {
+    public void toast(String message) {
         Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
     }
 
@@ -380,18 +394,68 @@ public class MainActivity extends AppCompatActivity {
         return altitude;
     }
 
+    public double getDistance(double lat, double lon) {
+        double distance = 0.75; // distance measured in meters and 0.75 is average adult step length
+
+        DateTimeRepository dtr = new DateTimeRepository();
+        String todayDate = dtr.getCurrentDate();
+
+        Cursor lastInsert = stepsDB.getLastRecord();
+        if (lastInsert != null) {
+            String lastDate = lastInsert.getString(lastInsert.getColumnIndex(StepsDB.DATE));
+            if (lastDate.equals(todayDate)) {
+                double previousStepLat = lastInsert.getDouble(lastInsert.getColumnIndex(StepsDB.LATITUDE));
+                double previousStepLon = lastInsert.getDouble(lastInsert.getColumnIndex(StepsDB.LONGITUDE));
+                if (previousStepLat != 0 && previousStepLon != 0) {
+                    previousStepLocation = new Location(LocationManager.GPS_PROVIDER);
+                    previousStepLocation.setLatitude(previousStepLat);
+                    previousStepLocation.setLongitude(previousStepLon);
+
+                    Location thisStepLocation = new Location(LocationManager.GPS_PROVIDER);
+                    thisStepLocation.setLatitude(lat);
+                    thisStepLocation.setLongitude(lon);
+                    distance = previousStepLocation.distanceTo(thisStepLocation) / 10;
+                    if (distance > 1.0) {
+                        distance = 1;
+                    }
+                    distance = Math.round(distance * 100.0) / 100.0;
+                }
+            }
+        }
+        return distance;
+    }
+
     private BroadcastReceiver stepsReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             String message = intent.getStringExtra("message");
             // if message is not empty
             if (message != null) {
+                // get location latitude and longitude
+                double lat = getLatitude();
+                double lon = getLongitude();
                 //save step to database
-                stepsDB.insert(getLatitude(), getLongitude(), getAltitude());
+                double dist = getDistance(lat, lon);
+                stepsDB.insert(lat, lon, getAltitude(), dist);
                 // update totals fields in dashboard fragment
-                DashboardFragment dashboardFragment = (DashboardFragment) getSupportFragmentManager().findFragmentByTag("dashboard");
-                dashboardFragment.updateDashboardFields();
+                updateDashboard();
+                // center map to newest location
+                centerMap();
             }
         }
     };
+
+    private void updateDashboard() {
+        DashboardFragment dashboardFragment = (DashboardFragment) getSupportFragmentManager().findFragmentByTag("dashboard");
+        if (dashboardFragment != null) {
+            dashboardFragment.updateDashboardFields();
+        }
+    }
+
+    private void centerMap() {
+        MapFragment mapFragment = (MapFragment) getSupportFragmentManager().findFragmentByTag("map");
+        if (mapFragment != null) {
+            mapFragment.centerMapView(getLatitude(), getLongitude());
+        }
+    }
 }
