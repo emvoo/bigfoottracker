@@ -7,12 +7,14 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
@@ -63,6 +65,9 @@ public class MainActivity extends AppCompatActivity {
     private boolean isGPSEnabled = false;
     private double latitude, longitude, altitude;
     private Location previousStepLocation, nextStepLocation;
+    private SharedPreferences prefs;
+    private boolean storedb;
+
 
     private String[] permissions= new String[]{
             Manifest.permission.WRITE_EXTERNAL_STORAGE,
@@ -76,6 +81,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         initDatabases();
         initUI(savedInstanceState);
         checkPermissions();
@@ -155,8 +161,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initDatabases() {
+        // TODO refactor to one table
         userDB = new UserDetailsDB(getApplicationContext());
         stepsDB = new StepsDB(getApplicationContext());
+    }
+
+    public boolean getKeepTrackPreference() {
+        // TODO sprawdz fragmenty zeby nie zapisywaly do bazy danych rekordow
+        // TODO set in preferences to not display register window
+        return prefs.getBoolean("dbstore", false);
     }
 
     private void initUI(Bundle savedInstanceState) {
@@ -212,9 +225,9 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_preferences:
-
+                Intent preferences = new Intent(this, PreferencesActivity.class);
+                startActivity(preferences);
                 return true;
-
             case R.id.action_share:
 
                 return true;
