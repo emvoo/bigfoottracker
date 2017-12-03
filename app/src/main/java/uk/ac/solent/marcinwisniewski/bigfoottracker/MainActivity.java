@@ -23,25 +23,23 @@ import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.Toast;
-
-import org.osmdroid.util.GeoPoint;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import uk.ac.solent.marcinwisniewski.bigfoottracker.db.StepsDB;
-import uk.ac.solent.marcinwisniewski.bigfoottracker.db.UserDetailsDB;
+import uk.ac.solent.marcinwisniewski.bigfoottracker.db.DatabaseHelper;
+import uk.ac.solent.marcinwisniewski.bigfoottracker.db.Step;
 import uk.ac.solent.marcinwisniewski.bigfoottracker.repositories.DateTimeRepository;
 import uk.ac.solent.marcinwisniewski.bigfoottracker.services.StepsService;
-
-import static android.R.attr.id;
 
 public class MainActivity extends AppCompatActivity {
     // TODO add actions to toolbar
@@ -54,20 +52,20 @@ public class MainActivity extends AppCompatActivity {
     // TODO add preferences file
     // TODO app icon (different sizes)
     // TODO on landscape (big screen) pin navigation drawer (dont hide it)
+
+
     private DrawerLayout drawerLayout;
     private int item_id;
-    public UserDetailsDB userDB;
-    public StepsDB stepsDB;
-    private NavigationView navigationView;
+    public DatabaseHelper db;
+
     private MenuItem dashboard_menu_item;
     public static final int MULTIPLE_PERMISSIONS = 4;
     private LocationManager locationManager;
-    private boolean isGPSEnabled = false;
     private double latitude, longitude, altitude;
-    private Location previousStepLocation, nextStepLocation;
     private SharedPreferences prefs;
-    private boolean storedb;
+    private DateTimeRepository dateTimeRepository;
 
+    private ActionBarDrawerToggle mDrawerToggle;
 
     private String[] permissions= new String[]{
             Manifest.permission.WRITE_EXTERNAL_STORAGE,
@@ -82,7 +80,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-        initDatabases();
+        dateTimeRepository = new DateTimeRepository();
+        initDatabase();
         initUI(savedInstanceState);
         checkPermissions();
         initLocation();
@@ -106,15 +105,22 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        stepsDB.openDB();
-        userDB.openDB();
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        stepsDB.closeDB();
-        userDB.closeDB();
+    }
+
+    @Override
+    protected void onDestroy()
+    {
+        super.onDestroy();
+        db.closeDB();
+        // TODO
+        if (getKeepTrackPreference() == false) {
+
+        }
     }
 
     @Override
@@ -160,10 +166,8 @@ public class MainActivity extends AppCompatActivity {
         super.onRestoreInstanceState(savedInstanceState);
     }
 
-    private void initDatabases() {
-        // TODO refactor to one table
-        userDB = new UserDetailsDB(getApplicationContext());
-        stepsDB = new StepsDB(getApplicationContext());
+    private void initDatabase() {
+        db = new DatabaseHelper(getApplicationContext());
     }
 
     public boolean getKeepTrackPreference() {
@@ -178,14 +182,49 @@ public class MainActivity extends AppCompatActivity {
         // load toolbar
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
         // initiate a DrawerLayout
         drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        drawerLayout.setScrimColor(getResources().getColor(android.R.color.transparent));
+
+
+        mDrawerToggle = new ActionBarDrawerToggle(this, drawerLayout,
+                R.string.drawer_open, R.string.drawer_close) {
+
+            /** Called when a drawer has settled in a completely closed state. */
+            public void onDrawerClosed(View view) {
+                super.onDrawerClosed(view);
+                getSupportActionBar().setTitle(getTitle());
+                invalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
+            }
+
+            /** Called when a drawer has settled in a completely open state. */
+            public void onDrawerOpened(View drawerView) {
+                super.onDrawerOpened(drawerView);
+                getSupportActionBar().setTitle(getTitle());
+                invalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
+            }
+        };
+
+        // Set the drawer toggle as the DrawerListener
+        drawerLayout.addDrawerListener(mDrawerToggle);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setHomeButtonEnabled(true);
+
         showDisplay(savedInstanceState);
+    }
+
+
+    @Override
+    protected void onPostCreate(Bundle savedInstanceState) {
+        super.onPostCreate(savedInstanceState);
+        // Sync the toggle state after onRestoreInstanceState has occurred.
+        mDrawerToggle.syncState();
     }
 
     private void initLocation() {
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        isGPSEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+        boolean isGPSEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
 
         if(!isGPSEnabled){
             // show alert dialog informing GPS is not enabled.
@@ -223,6 +262,9 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        if(mDrawerToggle.onOptionsItemSelected(item)) {
+            return true;
+        }
         switch (item.getItemId()) {
             case R.id.action_preferences:
                 Intent preferences = new Intent(this, PreferencesActivity.class);
@@ -231,7 +273,9 @@ public class MainActivity extends AppCompatActivity {
             case R.id.action_share:
 
                 return true;
-
+            case R.id.action_about:
+                Intent aboutActivity = new Intent(this, AboutActivity.class);
+                startActivity(aboutActivity);
             default:
                 // If we got here, the user's action was not recognized.
                 // Invoke the superclass to handle it.
@@ -241,7 +285,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void showDisplay(Bundle savedInstanceState) {
         // get number of users from db
-        int count = userDB.getAllUsers().getCount();
+        int count = db.getAllUsers().size();
         // check if there is account data in database
         if (count == 0) {
             // no user data
@@ -253,7 +297,6 @@ public class MainActivity extends AppCompatActivity {
             // user data exist in db
             // load navigation drawer
             setNavigationDrawer();
-
 
             // check if
             if (savedInstanceState != null && savedInstanceState.getInt("menu_item_id") != 0)
@@ -290,7 +333,7 @@ public class MainActivity extends AppCompatActivity {
      */
     private void setNavigationDrawer() {
         // initiate a Navigation View
-        navigationView = (NavigationView) findViewById(R.id.navigation);
+        NavigationView navigationView = (NavigationView) findViewById(R.id.navigation);
         // set setNavigationItemSelectedListener event on NavigationView
         navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
             @Override
@@ -392,19 +435,19 @@ public class MainActivity extends AppCompatActivity {
             default:
                 break;
         }
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        // set custom animations
+        transaction.setCustomAnimations(R.anim.enter_from_right, R.anim.exit_to_left, R.anim.enter_from_left, R.anim.exit_to_right);
         if (addBackStack) {
-            FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
             // replace a Fragment with Frame Layout
             transaction.replace(R.id.frame, fragment, tag).addToBackStack(null);
             // commit the changes
-            transaction.commit();
         } else {
-            FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
             // replace a Fragment with Frame Layout
             transaction.replace(R.id.frame, fragment, tag);
-            // commit the changes
-            transaction.commit();
         }
+        // commit the changes
+        transaction.commit();
 
         if (drawerLayout != null) {
             drawerLayout.setDrawerLockMode(drawerLayout.LOCK_MODE_UNLOCKED);
@@ -441,14 +484,14 @@ public class MainActivity extends AppCompatActivity {
         DateTimeRepository dtr = new DateTimeRepository();
         String todayDate = dtr.getCurrentDate();
 
-        Cursor lastInsert = stepsDB.getLastRecord();
+        Cursor lastInsert = db.getLastStep();
         if (lastInsert != null) {
-            String lastDate = lastInsert.getString(lastInsert.getColumnIndex(StepsDB.DATE));
+            String lastDate = db.getLastInsertDate(lastInsert);
             if (lastDate.equals(todayDate)) {
-                double previousStepLat = lastInsert.getDouble(lastInsert.getColumnIndex(StepsDB.LATITUDE));
-                double previousStepLon = lastInsert.getDouble(lastInsert.getColumnIndex(StepsDB.LONGITUDE));
+                double previousStepLat = db.getPreviousStepLatitude(lastInsert);
+                double previousStepLon = db.getPreviousStepLongitude(lastInsert);
                 if (previousStepLat != 0 && previousStepLon != 0) {
-                    previousStepLocation = new Location(LocationManager.GPS_PROVIDER);
+                    Location previousStepLocation = new Location(LocationManager.GPS_PROVIDER);
                     previousStepLocation.setLatitude(previousStepLat);
                     previousStepLocation.setLongitude(previousStepLon);
 
@@ -477,7 +520,17 @@ public class MainActivity extends AppCompatActivity {
                 double lon = getLongitude();
                 //save step to database
                 double dist = getDistance(lat, lon);
-                stepsDB.insert(lat, lon, getAltitude(), dist);
+                Step step = new Step();
+                step.setStep(1);
+                step.setLatitude(lat);
+                step.setLongitude(lon);
+                step.setAltitude(getAltitude());
+                step.setDistance(dist);
+                step.setDate_created(dateTimeRepository.getCurrentDate());
+                step.setTime_created(dateTimeRepository.getCurrentTime());
+
+                db.createStep(step);
+
                 // update totals fields in dashboard fragment
                 updateDashboard();
                 // center map to newest location
@@ -489,7 +542,7 @@ public class MainActivity extends AppCompatActivity {
     private void updateDashboard() {
         DashboardFragment dashboardFragment = (DashboardFragment) getSupportFragmentManager().findFragmentByTag("dashboard");
         if (dashboardFragment != null) {
-            dashboardFragment.updateDashboardFields();
+//            dashboardFragment.updateDashboardFields();
         }
     }
 

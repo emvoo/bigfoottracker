@@ -20,4 +20,7 @@
     <string name="action_settings">Settings</string>
     <string name="db_store">Data persistence</string>
     <string name="db_store_summary">Do you want to keep track of your steps?</string>
+    <string name="drawer_close">Close</string>
+    <string name="drawer_open">Open</string>
+    <string name="action_about">About</string>
 </resources>

@@ -25,6 +25,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".PreferencesActivity" android:label="@string/preferences"></activity>
+        <activity android:name=".AboutActivity" android:label="@string/preferences"></activity>
         <service android:enabled="true" android:name="uk.ac.solent.marcinwisniewski.bigfoottracker.services.StepsService" />
     </application>
 

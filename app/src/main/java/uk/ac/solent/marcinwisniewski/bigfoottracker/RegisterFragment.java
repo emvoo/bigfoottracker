@@ -1,9 +1,7 @@
 package uk.ac.solent.marcinwisniewski.bigfoottracker;
 
-import android.database.Cursor;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,12 +9,14 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import uk.ac.solent.marcinwisniewski.bigfoottracker.db.UserDetailsDB;
+import uk.ac.solent.marcinwisniewski.bigfoottracker.db.DatabaseHelper;
+import uk.ac.solent.marcinwisniewski.bigfoottracker.db.User;
 
 public class RegisterFragment extends Fragment {
     private EditText email, password;
     private Button register;
-    private UserDetailsDB userDB;
+//    private UserDetailsDB userDB;
+    private DatabaseHelper db;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -44,22 +44,23 @@ public class RegisterFragment extends Fragment {
     private View.OnClickListener loginClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View view) {
-            String name = getValue(email);
+            String username = getValue(email);
             // hash password
-            String pw = MD5(getValue(password));
-            userDB = ((MainActivity) getActivity()).userDB;
+            String pw = getValue(password);
+            db = ((MainActivity) getActivity()).db;
             // validate entered data
-            if (validateUsername(name) && validatePassword(pw)) {
+            if (validateUsername(username) && validatePassword(pw)) {
+                User user = new User(username, pw);
+                db.createUser(user);
                 // attempt to create new user
-                long result = userDB.insert(name, pw);
+                long result = db.createUser(user);
                 // check if user has been created successfully
                 if (result == -1) {
                     displayMessage("Error creating user.");
                 } else {
                     int id = (int) result;
-                    Cursor cursor = userDB.getById(id);
-                    if (cursor.moveToFirst()) {
-//                        String user = cursor.getString(cursor.getColumnIndex("email"));
+                    user = db.getUserById(id);
+                    if (user != null) {
                         getActivity().getSupportFragmentManager().beginTransaction().remove(RegisterFragment.this).commit();
                         ((MainActivity) getActivity()).showDisplay(null);
                     }
@@ -68,20 +69,7 @@ public class RegisterFragment extends Fragment {
         }
     };
 
-    private String MD5(String pw) {
-        try {
-            java.security.MessageDigest messageDigest = java.security.MessageDigest.getInstance("MD5");
-            byte[] array = messageDigest.digest(pw.getBytes());
-            StringBuffer stringBuffer = new StringBuffer();
-            for (int i = 0; i < array.length; ++i) {
-                stringBuffer.append(Integer.toHexString((array[i] & 0xFF) | 0x100).substring(1,3));
-            }
-            return stringBuffer.toString();
-        } catch (java.security.NoSuchAlgorithmException e) {
-            Log.e("RegisterFragment", e.getMessage());
-        }
-        return null;
-    }
+
 
     /**
      * Helper function to retrieve string value from any EditText field.
