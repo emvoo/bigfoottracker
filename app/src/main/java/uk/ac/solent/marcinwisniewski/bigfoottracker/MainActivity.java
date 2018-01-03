@@ -46,8 +46,7 @@ public class MainActivity extends AppCompatActivity {
         // actions going to be share with
         // export (might be part of share)
         // select date on map or everywhere
-        // add tabs to dashboard (day view, total view)
-    // TODO navigation drawer add 3 horizontal lines icon to open app drawer
+
     // TODO add notifications
     // TODO add preferences file
     // TODO app icon (different sizes)
@@ -172,6 +171,7 @@ public class MainActivity extends AppCompatActivity {
 
     public boolean getKeepTrackPreference() {
         // TODO sprawdz fragmenty zeby nie zapisywaly do bazy danych rekordow
+
         // TODO set in preferences to not display register window
         return prefs.getBoolean("dbstore", false);
     }

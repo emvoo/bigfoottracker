@@ -7,6 +7,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.jjoe64.graphview.GraphView;
+import com.jjoe64.graphview.GridLabelRenderer;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
 
@@ -32,6 +33,8 @@ public class AltitudeFragment extends Fragment {
 
     private void init(View view) {
         graph = view.findViewById(R.id.graph);
+        GridLabelRenderer glr = graph.getGridLabelRenderer();
+        glr.setPadding(32);
         db = ((MainActivity) getActivity()).db;
     }
 
