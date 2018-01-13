@@ -5,6 +5,7 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.GridLabelRenderer;
@@ -20,42 +21,37 @@ import uk.ac.solent.marcinwisniewski.bigfoottracker.db.Step;
  * Class to display taken steps altitudes.
  */
 public class AltitudeFragment extends Fragment {
-    private GraphView graph;
     private DatabaseHelper db;
-    private LineGraphSeries<DataPoint> series;
-    private DataPoint[] dataSeries;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.altitude_fragment, container, false);
-        init(view);
-        fillGraph();
+        init();
+        fillGraph(view);
         return view;
     }
 
-    private void init(View view) {
-        graph = view.findViewById(R.id.graph);
-        GridLabelRenderer glr = graph.getGridLabelRenderer();
-        glr.setPadding(32);
+    private void init() {
         db = ((MainActivity) getActivity()).db;
     }
 
-    private void fillGraph()
+    private void fillGraph(View view)
     {
-        List<Step> steps = db.getAllSteps();
-        int noOfSteps = (int) db.countAllSteps();
-        dataSeries = new DataPoint[noOfSteps];
-        if (steps != null) {
-            for (Step step:steps) {
-                int id = step.getId();
-                double altitude = step.getAltitude();
-                id--;
-                DataPoint dataPoint = new DataPoint(id, altitude);
-                dataSeries[id] = dataPoint;
-            }
+        GraphView graph = view.findViewById(R.id.graph);
+//        GridLabelRenderer glr = graph.getGridLabelRenderer();
+//        glr.setPadding(32);
 
-            series = new LineGraphSeries<>(dataSeries);
+        List<Step> steps = db.getAllSteps();
+        int noOfSteps = steps.size();
+        DataPoint[] dataSeries;
+
+        LineGraphSeries<DataPoint> series = new LineGraphSeries<>();
+        if (steps.size() > 0) {
+            for (int i = 1; i < noOfSteps; i++) {
+                double altitude = steps.get(i).getAltitude();
+                series.appendData(new DataPoint(i, altitude), true, noOfSteps);
+            }
             graph.addSeries(series);
         }
     }
