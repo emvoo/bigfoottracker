@@ -338,13 +338,13 @@ public class MainActivity extends AppCompatActivity {
      * Share method.
      */
     public void share() {
-            Intent sharingIntent = new Intent(Intent.ACTION_SEND);
-            sharingIntent.setType("text/plain");
-            String summary = getDailySummary();
+        Intent sharingIntent = new Intent(Intent.ACTION_SEND);
+        sharingIntent.setType("text/plain");
+        String summary = getDailySummary();
 
-            sharingIntent.setType("text/plain");
-            sharingIntent.putExtra(Intent.EXTRA_TEXT, summary);
-            startActivity(sharingIntent);
+        sharingIntent.setType("text/plain");
+        sharingIntent.putExtra(Intent.EXTRA_TEXT, summary);
+        startActivity(sharingIntent);
     }
 
     /**
