@@ -39,12 +39,11 @@ public class AltitudeFragment extends Fragment {
     private void fillGraph(View view)
     {
         GraphView graph = view.findViewById(R.id.graph);
-//        GridLabelRenderer glr = graph.getGridLabelRenderer();
-//        glr.setPadding(32);
+        GridLabelRenderer glr = graph.getGridLabelRenderer();
+        glr.setPadding(32);
 
         List<Step> steps = db.getAllSteps();
         int noOfSteps = steps.size();
-        DataPoint[] dataSeries;
 
         LineGraphSeries<DataPoint> series = new LineGraphSeries<>();
         if (steps.size() > 0) {
