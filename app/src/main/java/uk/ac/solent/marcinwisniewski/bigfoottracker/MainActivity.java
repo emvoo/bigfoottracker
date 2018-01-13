@@ -35,7 +35,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
-import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,8 +44,10 @@ import uk.ac.solent.marcinwisniewski.bigfoottracker.db.Step;
 import uk.ac.solent.marcinwisniewski.bigfoottracker.repositories.DateTimeRepository;
 import uk.ac.solent.marcinwisniewski.bigfoottracker.services.StepsService;
 
+/**
+ * Main class where magic begins ;)
+ */
 public class MainActivity extends AppCompatActivity {
-
     private int menu_item_id;
     public DatabaseHelper db;
 
@@ -73,16 +74,22 @@ public class MainActivity extends AppCompatActivity {
     private NotificationCompat.Builder notification;
     private int uniqueNotificationId;
 
+    /*
+     *
+     *      ACTIVITY LIFECYCLE METHODS
+     *
+     */
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         dateTimeRepository = new DateTimeRepository();
-        initDatabase();
-        initUI(savedInstanceState);
-        checkPermissions();
-        initLocation();
-        startService(new Intent(MainActivity.this, StepsService.class));
+        initDatabase(); // start database connection
+        initUI(savedInstanceState); // load UI elements
+        checkPermissions(); // check needed permissions
+        initLocation(); // initialize location services
+        startService(new Intent(MainActivity.this, StepsService.class)); // start service to allow steps taking functionality
 
         // notifications section
         uniqueNotificationId = 987654321;
@@ -100,7 +107,6 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onPause() {
-//        stopLocationListener();
         LocalBroadcastManager.getInstance(this).unregisterReceiver(stepsReceiver);
         super.onPause();
     }
@@ -117,13 +123,18 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
         if (!getKeepTrackPreference()) {
             db.clearDatabase();
         }
         db.closeDB();
+        stopLocationListener();
+        super.onDestroy();
     }
 
+
+    /**
+     * Back button press actions.
+     */
     @Override
     public void onBackPressed() {
         FragmentManager manager = getSupportFragmentManager();
@@ -132,26 +143,6 @@ public class MainActivity extends AppCompatActivity {
         } else {
             this.finish();
             return;
-        }
-    }
-
-    // TODO not sure if that is needed
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
-        switch (requestCode) {
-            case MULTIPLE_PERMISSIONS:{
-                if(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
-                    // permissions granted.
-                }
-//                else {
-//                    String permissions = "";
-//                    for (String per : permissionsList) {
-//                        permissions += "\n" + per;
-//                    }
-//                    // permissions list of don't granted permission
-//                }
-                return;
-            }
         }
     }
 
@@ -180,7 +171,6 @@ public class MainActivity extends AppCompatActivity {
      * @return boolean
      */
     public boolean getKeepTrackPreference() {
-        // TODO sprawdz fragmenty zeby nie zapisywaly do bazy danych rekordow
         return prefs.getBoolean("dbstore", true);
     }
 
@@ -258,10 +248,12 @@ public class MainActivity extends AppCompatActivity {
         makeTransition(fragment, true);
     }
 
+    /**
+     * Sync the toggle state after onRestoreInstanceState has occurred.
+     */
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
-        // Sync the toggle state after onRestoreInstanceState has occurred.
         if (drawerLayout != null) {
             mDrawerToggle.syncState();
         }
@@ -303,12 +295,22 @@ public class MainActivity extends AppCompatActivity {
         alert.show();
     }
 
+    /**
+     * Populate toolbar buttons.
+     * @param menu
+     * @return
+     */
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.toolbar_buttons, menu);
         return super.onCreateOptionsMenu(menu);
     }
 
+    /**
+     * Handle left menu click actions.
+     * @param item
+     * @return
+     */
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if(drawerLayout != null && mDrawerToggle.onOptionsItemSelected(item)) {
@@ -474,11 +476,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * Stops location updates.
-     */
-    public void stopLocationListener() { locationManager.removeUpdates(myLocationListener); }
-
-    /**
      * Location listener required to keep users position updated (centered)
      */
     private LocationListener myLocationListener = new LocationListener() {
@@ -501,6 +498,11 @@ public class MainActivity extends AppCompatActivity {
         public void onStatusChanged(String provider, int status, Bundle extras) {
         }
     };
+
+    /**
+     * Stops location updates.
+     */
+    public void stopLocationListener() { locationManager.removeUpdates(myLocationListener); }
 
     /**
      * Sets longitude, latitude and altitude.
@@ -701,16 +703,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * Centers map to current user location.
-     */
-    private void centerMap() {
-        MapFragment mapFragment = (MapFragment) getSupportFragmentManager().findFragmentByTag("map");
-        if (mapFragment != null) {
-            mapFragment.centerMapView(getLatitude(), getLongitude());
-        }
-    }
-
-    /**
      * Calculates calories based on information available online
      * https://www.livestrong.com/article/320124-how-many-calories-does-the-average-person-use-per-step/
      *
@@ -719,6 +711,15 @@ public class MainActivity extends AppCompatActivity {
      */
     private int calculateCalories(long steps) {
         return (int)steps/20;
+    }
+    /**
+     * Centers map to current user location.
+     */
+    private void centerMap() {
+        MapFragment mapFragment = (MapFragment) getSupportFragmentManager().findFragmentByTag("map");
+        if (mapFragment != null) {
+            mapFragment.centerMapView(getLatitude(), getLongitude());
+        }
     }
 
     /**

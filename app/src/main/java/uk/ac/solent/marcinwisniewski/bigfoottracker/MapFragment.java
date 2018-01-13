@@ -8,7 +8,6 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
 import org.osmdroid.api.IGeoPoint;
 import org.osmdroid.config.Configuration;
@@ -25,16 +24,19 @@ import java.util.List;
 import uk.ac.solent.marcinwisniewski.bigfoottracker.db.DatabaseHelper;
 import uk.ac.solent.marcinwisniewski.bigfoottracker.db.Step;
 
-// TODO comment and check graph functionality
-
+/**
+ * Class to display map and handle OpenStreetMap functionality.
+ */
 public class MapFragment extends Fragment {
     private MapView mapView;
     private View view;
     private DatabaseHelper db;
     private SharedPreferences prefs;
-
     private boolean follow;
 
+    /*
+        LIFECYCLE METHODS
+     */
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         view = inflater.inflate(R.layout.map_fragment, container, false);
@@ -53,6 +55,9 @@ public class MapFragment extends Fragment {
         init();
     }
 
+    /**
+     * Initiate in fragment variables and functionality used
+     */
     private void init() {
         Configuration.getInstance().setUserAgentValue(getActivity().getPackageName());
         prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
@@ -67,12 +72,21 @@ public class MapFragment extends Fragment {
         drawHistoryPaths();
     }
 
+    /**
+     * Centres maps to users location.
+     *
+     * @param lat
+     * @param lon
+     */
     public void centerMapView(double lat, double lon) {
         follow = prefs.getBoolean("follow", true);
         if (mapView != null && follow)
             mapView.getController().setCenter(new GeoPoint(lat, lon));
     }
 
+    /**
+     * Draws paths where user allowed application to recorde user's steps.
+     */
     private void drawHistoryPaths() {
         List<Step> steps = db.getAllSteps();
         if (steps.size() > 0) {

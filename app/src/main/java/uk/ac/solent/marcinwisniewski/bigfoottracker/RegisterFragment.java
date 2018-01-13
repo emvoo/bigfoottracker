@@ -11,7 +11,10 @@ import android.widget.Toast;
 
 import uk.ac.solent.marcinwisniewski.bigfoottracker.db.DatabaseHelper;
 import uk.ac.solent.marcinwisniewski.bigfoottracker.db.User;
-// TODO comments
+
+/**
+ * Fragment to register user account.
+ */
 public class RegisterFragment extends Fragment {
     private EditText email, password;
     private Button register;

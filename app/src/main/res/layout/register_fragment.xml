@@ -126,6 +126,7 @@
                 android:text="@string/register"
                 android:paddingLeft="40dp"
                 android:paddingRight="40dp"
+                android:background="@color/colorPrimary"
                 />
         </LinearLayout> <!-- END 4th row -->
 

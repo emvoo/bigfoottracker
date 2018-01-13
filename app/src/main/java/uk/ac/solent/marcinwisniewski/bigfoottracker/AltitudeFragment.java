@@ -16,6 +16,9 @@ import java.util.List;
 import uk.ac.solent.marcinwisniewski.bigfoottracker.db.DatabaseHelper;
 import uk.ac.solent.marcinwisniewski.bigfoottracker.db.Step;
 
+/**
+ * Class to display taken steps altitudes.
+ */
 public class AltitudeFragment extends Fragment {
     private GraphView graph;
     private DatabaseHelper db;
