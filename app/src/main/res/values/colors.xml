@@ -1,0 +1,14 @@
+<resources>
+    <color name="colorPrimary">#ef6c00</color>
+    <color name="colorPrimaryDark">#b53d00</color>
+    <color name="shadow">#b53d00</color>
+    <color name="primaryColor">#ef6c00</color>
+    <color name="primaryLightColor">#ff9d3f</color>
+    <color name="primaryDarkColor">#b53d00</color>
+    <color name="secondaryColor">#d84315</color>
+    <color name="secondaryLightColor">#ff7543</color>
+    <color name="secondaryDarkColor">#9f0000</color>
+    <color name="primaryTextColor">#000</color>
+    <color name="secondaryTextColor">#b53d00</color>
+    <color name="accent_material_light">#ff9640</color>
+</resources>
