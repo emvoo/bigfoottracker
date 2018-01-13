@@ -46,6 +46,7 @@
                 android:layout_weight="1"
                 android:paddingRight="16dp"
                 android:text="Version"
+                android:layout_gravity="end"
                 android:textAlignment="viewEnd" />
 
             <TextView
@@ -78,6 +79,7 @@
                 android:layout_weight="1"
                 android:paddingRight="16dp"
                 android:text="Author"
+                android:layout_gravity="end"
                 android:textAlignment="viewEnd" />
 
             <TextView
@@ -103,16 +105,15 @@
             android:orientation="horizontal">
 
             <TextView
-                android:id="@+id/textView9"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:paddingRight="16dp"
                 android:text="Contact"
+                android:layout_gravity="end"
                 android:textAlignment="viewEnd" />
 
             <TextView
-                android:id="@+id/authorValue"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -140,6 +141,7 @@
                 android:layout_weight="1"
                 android:paddingRight="16dp"
                 android:text="Date created"
+                android:layout_gravity="end"
                 android:textAlignment="viewEnd" />
 
             <TextView
@@ -147,7 +149,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="26-11-2017" />
+                android:text="13-01-2017" />
         </LinearLayout>
 
     </LinearLayout>

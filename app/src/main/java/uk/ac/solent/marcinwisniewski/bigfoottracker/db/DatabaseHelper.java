@@ -9,6 +9,9 @@ import android.database.sqlite.SQLiteOpenHelper;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Class responsible for connecting to application database.
+ */
 public class DatabaseHelper extends SQLiteOpenHelper {
     // Database Version
     private static final int DATABASE_VERSION = 1;
@@ -36,8 +39,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String USERNAME = "username";
     private static final String PASSWORD = "password";
 
-    // Table Create Statements
-    // Todo table create statement
+    // Tables Create Statements
     private static final String CREATE_USER_DETAILS_TABLE_QUERY =
             "CREATE TABLE IF NOT EXISTS " + TABLE_USER
                     + "("
@@ -58,6 +60,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     + TIME + " TEXT NOT NULL);";
 
 
+    /**
+     * Constructor method.
+     *
+     * @param context
+     */
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
@@ -121,6 +128,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return steps;
     }
 
+    /**
+     * Counts all steps in database.
+     *
+     * @return
+     */
     public long countAllSteps() {
         SQLiteDatabase db = this.getReadableDatabase();
         String query = "SELECT SUM("+ STEP +") AS "+ STEP +" FROM " + TABLE_STEPS;
@@ -131,8 +143,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return 0;
     }
 
-    public long countAllStepsByDay(String date)
-    {
+    /**
+     * Counts all steps by given date.
+     *
+     * @param date
+     * @return
+     */
+    public long countAllStepsByDay(String date) {
         SQLiteDatabase db = this.getReadableDatabase();
         String query = "SELECT SUM("+ STEP +") AS "+ STEP +" FROM " + TABLE_STEPS + " WHERE " + DATE+"='"+date+"'";
         Cursor cursor = db.rawQuery(query, null);
@@ -142,8 +159,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return 0;
     }
 
-    public double countDistanceByDay(String date)
-    {
+    /**
+     * Count distance by given date.
+     *
+     * @param date
+     * @return
+     */
+    public double countDistanceByDay(String date) {
         SQLiteDatabase db = this.getReadableDatabase();
         String query = "SELECT SUM("+ DISTANCE +") AS "+ DISTANCE +" FROM " + TABLE_STEPS + " WHERE " + DATE+"='"+date+"'";
         Cursor cursor = db.rawQuery(query, null);
@@ -153,8 +175,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return 0;
     }
 
-    public double countDistance()
-    {
+    /**
+     * Count whole distance.
+     *
+     * @return
+     */
+    public double countDistance() {
         SQLiteDatabase db = this.getReadableDatabase();
         String query = "SELECT SUM("+ DISTANCE +") AS "+ DISTANCE +" FROM " + TABLE_STEPS + ";";
         Cursor cursor = db.rawQuery(query, null);
@@ -164,6 +190,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return 0;
     }
 
+    /**
+     * Get last inserted step.
+     *
+     * @return
+     */
     public Cursor getLastStep() {
         String selectQuery = "SELECT * FROM " + TABLE_STEPS + " ORDER BY id DESC LIMIT 1;";
 
@@ -175,26 +206,51 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return null;
     }
 
+    /**
+     * Get last inserted date.
+     *
+     * @param c
+     * @return
+     */
     public String getLastInsertDate(Cursor c) {
         return c.getString(c.getColumnIndex(DATE));
     }
 
+    /**
+     * Get previous step latitude.
+     *
+     * @param c
+     * @return
+     */
     public double getPreviousStepLatitude(Cursor c) {
         return c.getDouble(c.getColumnIndex(LATITUDE));
     }
 
+    /**
+     * Get previous step longitude.
+     *
+     * @param c
+     * @return
+     */
     public double getPreviousStepLongitude(Cursor c) {
         return c.getDouble(c.getColumnIndex(LONGITUDE));
     }
 
-//    /*
-// * Deleting a todo
-// */
-//    public void deleteSteps() {
-//        SQLiteDatabase db = this.getWritableDatabase();
-//        db.delete(TABLE_STEPS, KEY_ID + " = ?", new String[] { String.valueOf(tado_id) });
-//    }
+    /**
+     * Clear database.
+     */
+    public void clearDatabase() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete(TABLE_STEPS, null, null);
+        db.delete(TABLE_USER, null, null);
+    }
 
+    /**
+     * Saves user in database.
+     *
+     * @param user
+     * @return
+     */
     public long createUser(User user) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
@@ -203,6 +259,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return db.insert(TABLE_USER, null, values);
     }
 
+    /**
+     * Get user by ID>
+     *
+     * @param id
+     * @return
+     */
     public User getUserById(int id) {
         SQLiteDatabase db = this.getReadableDatabase();
         String selectQuery = "SELECT  * FROM " + TABLE_USER + " WHERE " + KEY_ID + "=" + id;
@@ -216,6 +278,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return null;
     }
 
+    /**
+     * Get all users.
+     *
+     * @return
+     */
     public List<User> getAllUsers() {
         List<User> users = new ArrayList<>();
         String selectQuery = "SELECT  * FROM " + TABLE_USER;
@@ -235,7 +302,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return users;
     }
 
-    // closing database
+    /**
+     * Closing database
+     */
     public void closeDB() {
         SQLiteDatabase db = this.getReadableDatabase();
         if (db != null && db.isOpen())

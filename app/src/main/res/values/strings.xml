@@ -26,4 +26,11 @@
     <string name="day_summary">Day Summary</string>
     <string name="summary">Summary</string>
     <string name="zero">0</string>
+    <string name="centering">Centering</string>
+    <string name="centering_summary">Do you want map to update your position as you go?</string>
+    <string-array name="navigation_items">
+        <item>Dashboard</item>
+        <item>Map</item>
+        <item>Altitude</item>
+    </string-array>
 </resources>

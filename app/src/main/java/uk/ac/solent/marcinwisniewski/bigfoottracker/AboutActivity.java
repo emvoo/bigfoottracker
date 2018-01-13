@@ -3,6 +3,9 @@ package uk.ac.solent.marcinwisniewski.bigfoottracker;
 import android.app.Activity;
 import android.os.Bundle;
 
+/**
+ * About class.
+ */
 public class AboutActivity extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState)

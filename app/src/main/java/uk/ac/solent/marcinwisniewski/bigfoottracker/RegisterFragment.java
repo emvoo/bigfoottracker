@@ -11,11 +11,10 @@ import android.widget.Toast;
 
 import uk.ac.solent.marcinwisniewski.bigfoottracker.db.DatabaseHelper;
 import uk.ac.solent.marcinwisniewski.bigfoottracker.db.User;
-
+// TODO comments
 public class RegisterFragment extends Fragment {
     private EditText email, password;
     private Button register;
-//    private UserDetailsDB userDB;
     private DatabaseHelper db;
 
     @Override

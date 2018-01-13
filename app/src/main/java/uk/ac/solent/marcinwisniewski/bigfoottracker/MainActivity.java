@@ -2,6 +2,8 @@ package uk.ac.solent.marcinwisniewski.bigfoottracker;
 
 import android.Manifest;
 import android.app.AlertDialog;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -25,12 +27,14 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.app.NotificationCompat;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ListView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -42,30 +46,21 @@ import uk.ac.solent.marcinwisniewski.bigfoottracker.repositories.DateTimeReposit
 import uk.ac.solent.marcinwisniewski.bigfoottracker.services.StepsService;
 
 public class MainActivity extends AppCompatActivity {
-    // TODO add actions to toolbar
-        // actions going to be share with
-        // export (might be part of share)
-        // select date on map or everywhere
 
-    // TODO add notifications
-    // TODO add preferences file
-    // TODO app icon (different sizes)
-    // TODO on landscape (big screen) pin navigation drawer (dont hide it)
-
-
-    private DrawerLayout drawerLayout;
-    private int item_id;
+    private int menu_item_id;
     public DatabaseHelper db;
 
-    private MenuItem dashboard_menu_item;
-    public static final int MULTIPLE_PERMISSIONS = 4;
     private LocationManager locationManager;
     private double latitude, longitude, altitude;
-    private SharedPreferences prefs;
+    private int stepCounter;
     private DateTimeRepository dateTimeRepository;
 
+    private SharedPreferences prefs;
+
+    private DrawerLayout drawerLayout;
     private ActionBarDrawerToggle mDrawerToggle;
 
+    public static final int MULTIPLE_PERMISSIONS = 4;
     private String[] permissions= new String[]{
             Manifest.permission.WRITE_EXTERNAL_STORAGE,
             Manifest.permission.CAMERA,
@@ -74,6 +69,9 @@ public class MainActivity extends AppCompatActivity {
             Manifest.permission.INTERNET,
             Manifest.permission.ACCESS_NETWORK_STATE
     };
+
+    private NotificationCompat.Builder notification;
+    private int uniqueNotificationId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,6 +83,12 @@ public class MainActivity extends AppCompatActivity {
         checkPermissions();
         initLocation();
         startService(new Intent(MainActivity.this, StepsService.class));
+
+        // notifications section
+        uniqueNotificationId = 987654321;
+        notification = new NotificationCompat.Builder(this);
+        notification.setAutoCancel(true);
+        stepCounter = 0;
     }
 
     @Override
@@ -96,7 +100,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onPause() {
-        stopLocationListener();
+//        stopLocationListener();
         LocalBroadcastManager.getInstance(this).unregisterReceiver(stepsReceiver);
         super.onPause();
     }
@@ -112,14 +116,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onDestroy()
-    {
+    protected void onDestroy() {
         super.onDestroy();
-        db.closeDB();
-        // TODO
-        if (getKeepTrackPreference() == false) {
-
+        if (!getKeepTrackPreference()) {
+            db.clearDatabase();
         }
+        db.closeDB();
     }
 
     @Override
@@ -133,7 +135,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // TODO not sure if thats needed
+    // TODO not sure if that is needed
     @Override
     public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
         switch (requestCode) {
@@ -155,27 +157,38 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
-        outState.putInt("menu_item_id", item_id);
+        outState.putInt("menu_item_id", menu_item_id);
         super.onSaveInstanceState(outState);
     }
 
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
-        item_id = savedInstanceState.getInt("menu_item_id");
+        menu_item_id = savedInstanceState.getInt("menu_item_id");
         super.onRestoreInstanceState(savedInstanceState);
     }
 
+    /**
+     * Initiates database class.
+     */
     private void initDatabase() {
         db = new DatabaseHelper(getApplicationContext());
     }
 
+    /**
+     * checks preferences value.
+     *
+     * @return boolean
+     */
     public boolean getKeepTrackPreference() {
         // TODO sprawdz fragmenty zeby nie zapisywaly do bazy danych rekordow
-
-        // TODO set in preferences to not display register window
-        return prefs.getBoolean("dbstore", false);
+        return prefs.getBoolean("dbstore", true);
     }
 
+    /**
+     * Initiates UI.
+     *
+     * @param savedInstanceState
+     */
     private void initUI(Bundle savedInstanceState) {
         // load layout file
         setContentView(R.layout.activity_main);
@@ -185,43 +198,78 @@ public class MainActivity extends AppCompatActivity {
 
         // initiate a DrawerLayout
         drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
-        drawerLayout.setScrimColor(getResources().getColor(android.R.color.transparent));
+        if (drawerLayout != null) {
+            drawerLayout.setScrimColor(getResources().getColor(android.R.color.transparent));
 
+            mDrawerToggle = new ActionBarDrawerToggle(this, drawerLayout,
+                    R.string.drawer_open, R.string.drawer_close) {
 
-        mDrawerToggle = new ActionBarDrawerToggle(this, drawerLayout,
-                R.string.drawer_open, R.string.drawer_close) {
+                /** Called when a drawer has settled in a completely closed state. */
+                public void onDrawerClosed(View view) {
+                    super.onDrawerClosed(view);
+                    getSupportActionBar().setTitle(getTitle());
+                    invalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
+                }
 
-            /** Called when a drawer has settled in a completely closed state. */
-            public void onDrawerClosed(View view) {
-                super.onDrawerClosed(view);
-                getSupportActionBar().setTitle(getTitle());
-                invalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
-            }
+                /** Called when a drawer has settled in a completely open state. */
+                public void onDrawerOpened(View drawerView) {
+                    super.onDrawerOpened(drawerView);
+                    getSupportActionBar().setTitle(getTitle());
+                    invalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
+                }
+            };
 
-            /** Called when a drawer has settled in a completely open state. */
-            public void onDrawerOpened(View drawerView) {
-                super.onDrawerOpened(drawerView);
-                getSupportActionBar().setTitle(getTitle());
-                invalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
-            }
-        };
+            // Set the drawer toggle as the DrawerListener
+            drawerLayout.addDrawerListener(mDrawerToggle);
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setHomeButtonEnabled(true);
+        }
 
-        // Set the drawer toggle as the DrawerListener
-        drawerLayout.addDrawerListener(mDrawerToggle);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setHomeButtonEnabled(true);
-
+        ListView navigation_items = (ListView) findViewById(R.id.navigation_items);
+        if (navigation_items != null) {
+            navigation_items.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    selectItem(position);
+                }
+            });
+        }
         showDisplay(savedInstanceState);
     }
 
+    /**
+     * Loads fragment based on selected item from drawer.
+     *
+     * @param position
+     */
+    private void selectItem(int position) {
+        Fragment fragment = null;
+        switch (position) {
+            case 0:
+                fragment = new DashboardFragment();
+                break;
+            case 1:
+                fragment = new MapFragment();
+                break;
+            case 2:
+                fragment = new AltitudeFragment();
+                break;
+        }
+        makeTransition(fragment, true);
+    }
 
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
         // Sync the toggle state after onRestoreInstanceState has occurred.
-        mDrawerToggle.syncState();
+        if (drawerLayout != null) {
+            mDrawerToggle.syncState();
+        }
     }
 
+    /**
+     * Initializes GPS.
+     */
     private void initLocation() {
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         boolean isGPSEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
@@ -234,8 +282,10 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // display alert message if GPS is not enabled
-    public void showSettingsAlert(){
+    /**
+     * Displays alert message if GPS is not enabled.
+     */
+    public void showSettingsAlert() {
         final AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setMessage("Your GPS seems to be disabled, do you want to enable it?")
                 .setCancelable(false)
@@ -255,14 +305,13 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.toolbar_buttons, menu);
-        return true;
+        getMenuInflater().inflate(R.menu.toolbar_buttons, menu);
+        return super.onCreateOptionsMenu(menu);
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if(mDrawerToggle.onOptionsItemSelected(item)) {
+        if(drawerLayout != null && mDrawerToggle.onOptionsItemSelected(item)) {
             return true;
         }
         switch (item.getItemId()) {
@@ -271,7 +320,7 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(preferences);
                 return true;
             case R.id.action_share:
-
+                share();
                 return true;
             case R.id.action_about:
                 Intent aboutActivity = new Intent(this, AboutActivity.class);
@@ -283,35 +332,92 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Share method.
+     */
+    public void share() {
+            Intent sharingIntent = new Intent(Intent.ACTION_SEND);
+            sharingIntent.setType("text/plain");
+            String summary = getDailySummary();
+
+            sharingIntent.setType("text/plain");
+            sharingIntent.putExtra(Intent.EXTRA_TEXT, summary);
+            startActivity(sharingIntent);
+    }
+
+    /**
+     * Prepares message to be shared.
+     *
+     * @return String
+     */
+    public String getDailySummary() {
+        // today's fields
+        DateTimeRepository dtr = new DateTimeRepository();
+        String today = dtr.getCurrentDate();
+        double distance = db.countDistanceByDay(today);
+        long steps = db.countAllStepsByDay(today);
+        int calories = this.calculateCalories(steps);
+        String appName = getApplicationInfo().loadLabel(getPackageManager()).toString();
+        String myString = "Hey! I walked today " + distance + "m taking " + steps + " steps and I've burnt " + calories + " kcal. I know that thanks to " + appName + " app.";
+
+        return myString;
+    }
+
+    /**
+     * Loads fragments.
+     *
+     * @param savedInstanceState
+     */
     public void showDisplay(Bundle savedInstanceState) {
         // get number of users from db
         int count = db.getAllUsers().size();
         // check if there is account data in database
         if (count == 0) {
-            // no user data
-            // load register fragment on first run
-            makeTransition(new RegisterFragment(), false);
-            // hide side panel
-            drawerLayout.setDrawerLockMode(drawerLayout.LOCK_MODE_LOCKED_CLOSED);
-        } else {
-            // user data exist in db
-            // load navigation drawer
-            setNavigationDrawer();
-
-            // check if
-            if (savedInstanceState != null && savedInstanceState.getInt("menu_item_id") != 0)
-            {
-                // load selected fragment on screen orientation
-                item_id = savedInstanceState.getInt("menu_item_id");
-                Fragment fragment = instantiateFragment(item_id);
-                makeTransition(fragment, true);
+            if (getKeepTrackPreference()) {
+                // no user data
+                // load register fragment on first run
+                makeTransition(new RegisterFragment(), false);
+                // hide side panel
+                if (drawerLayout != null) {
+                    drawerLayout.setDrawerLockMode(drawerLayout.LOCK_MODE_LOCKED_CLOSED);
+                }
             } else {
-                // load users dashboard
-                makeTransition(new DashboardFragment(), true);
+                continuesDisplaying(savedInstanceState);
             }
+        } else {
+            continuesDisplaying(savedInstanceState);
         }
     }
 
+    /**
+     * Loads fragment into activity frame.
+     *
+     * @param savedInstanceState
+     */
+    private void continuesDisplaying(Bundle savedInstanceState) {
+        // user data exist in db
+        // load navigation drawer
+        if (drawerLayout != null) {
+            setNavigationDrawer();
+        }
+
+        if (savedInstanceState != null && savedInstanceState.getInt("menu_item_id") != 0)
+        {
+            // load selected fragment on screen orientation
+            menu_item_id = savedInstanceState.getInt("menu_item_id");
+            Fragment fragment = instantiateFragment(menu_item_id);
+            makeTransition(fragment, true);
+        } else {
+            // load users dashboard
+            makeTransition(new DashboardFragment(), true);
+        }
+    }
+
+    /**
+     * Checks and loads/requires permissions.
+     *
+     * @return boolean
+     */
     private  boolean checkPermissions() {
         int result;
         List<String> listPermissionsNeeded = new ArrayList<>();
@@ -339,10 +445,10 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public boolean onNavigationItemSelected(MenuItem menuItem) {
                 // get selected menu item's id
-                item_id = menuItem.getItemId();
+                menu_item_id = menuItem.getItemId();
 
                 // create a Fragment Object
-                Fragment fragment = instantiateFragment(item_id);
+                Fragment fragment = instantiateFragment(menu_item_id);
                 // check if fragment is null
                 if (fragment != null) {
                     // load fragment
@@ -354,7 +460,10 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    public void requestLocUpdates(){
+    /**
+     * Requests location updates.
+     */
+    public void requestLocUpdates() {
         try {
             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, myLocationListener);
             locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, myLocationListener);
@@ -364,9 +473,14 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void stopLocationListener(){ locationManager.removeUpdates(myLocationListener); }
+    /**
+     * Stops location updates.
+     */
+    public void stopLocationListener() { locationManager.removeUpdates(myLocationListener); }
 
-    // location listener required to keep users position updated (centered)
+    /**
+     * Location listener required to keep users position updated (centered)
+     */
     private LocationListener myLocationListener = new LocationListener() {
 
         @Override
@@ -388,7 +502,11 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    // center map to users current position
+    /**
+     * Sets longitude, latitude and altitude.
+     *
+     * @param location
+     */
     private void updateLoc(Location location){
         // get current location and latitude
         this.latitude = location.getLatitude();
@@ -419,7 +537,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * Load new fragment.
+     * Load new fragment into activity frame.
      *
      * @param fragment
      */
@@ -441,7 +559,6 @@ public class MainActivity extends AppCompatActivity {
         if (addBackStack) {
             // replace a Fragment with Frame Layout
             transaction.replace(R.id.frame, fragment, tag).addToBackStack(null);
-            // commit the changes
         } else {
             // replace a Fragment with Frame Layout
             transaction.replace(R.id.frame, fragment, tag);
@@ -455,29 +572,53 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Converts class name to tag.
+     *
+     * @param clsName
+     * @return
+     */
     private String parseClassName(String clsName) {
-        String tag = "";
+        String tag;
         String[] parts = clsName.split("(?=[A-Z])");
         tag = parts[1].toLowerCase();
         return tag;
     }
 
-    public void toast(String message) {
-        Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
-    }
-
+    /**
+     * Latitude attribute getter.
+     *
+     * @return double latitude
+     */
     public double getLatitude() {
         return latitude;
     }
 
+    /**
+     * Longitude attribute getter.
+     *
+     * @return double longitude
+     */
     public double getLongitude() {
         return longitude;
     }
 
+    /**
+     * Altitude attribute getter.
+     *
+     * @return double altitude
+     */
     public double getAltitude() {
         return altitude;
     }
 
+    /**
+     * Attempts to calculate distance between two steps taken.
+     *
+     * @param lat
+     * @param lon
+     * @return
+     */
     public double getDistance(double lat, double lon) {
         double distance = 0.75; // distance measured in meters and 0.75 is average adult step length
 
@@ -509,12 +650,16 @@ public class MainActivity extends AppCompatActivity {
         return distance;
     }
 
+    /**
+     * Receiver class responsible for receiving messages from StepsService.
+     */
     private BroadcastReceiver stepsReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             String message = intent.getStringExtra("message");
             // if message is not empty
             if (message != null) {
+                stepCounter++;
                 // get location latitude and longitude
                 double lat = getLatitude();
                 double lon = getLongitude();
@@ -535,21 +680,61 @@ public class MainActivity extends AppCompatActivity {
                 updateDashboard();
                 // center map to newest location
                 centerMap();
+
+                // displays notification after every 1000 steps taken
+                if (stepCounter == 1000) {
+                    stepCounter = 0;
+                    displayNotification();
+                }
             }
         }
     };
 
+    /**
+     * Calls dashboard function and updates dashboard fragment values.
+     */
     private void updateDashboard() {
         DashboardFragment dashboardFragment = (DashboardFragment) getSupportFragmentManager().findFragmentByTag("dashboard");
         if (dashboardFragment != null) {
-//            dashboardFragment.updateDashboardFields();
+            dashboardFragment.updateDashboardFields();
         }
     }
 
+    /**
+     * Centers map to current user location.
+     */
     private void centerMap() {
         MapFragment mapFragment = (MapFragment) getSupportFragmentManager().findFragmentByTag("map");
         if (mapFragment != null) {
             mapFragment.centerMapView(getLatitude(), getLongitude());
         }
+    }
+
+    /**
+     * Calculates calories based on information available online
+     * https://www.livestrong.com/article/320124-how-many-calories-does-the-average-person-use-per-step/
+     *
+     * @param steps
+     * @return
+     */
+    private int calculateCalories(long steps) {
+        return (int)steps/20;
+    }
+
+    /**
+     * Displays notification.
+     */
+    public void displayNotification() {
+        notification.setSmallIcon(R.drawable.ic_bigfoot_notification);
+        notification.setTicker("Wow! another 1000!");
+        notification.setWhen(System.currentTimeMillis());
+        notification.setContentTitle("Wow! You made it again");
+        notification.setContentText("Another 1000 steps. Well done you!");
+
+        Intent intent = new Intent(this, MainActivity.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        notification.setContentIntent(pendingIntent);
+        NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        notificationManager.notify(uniqueNotificationId, notification.build());
     }
 }

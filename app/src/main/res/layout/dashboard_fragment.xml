@@ -19,6 +19,8 @@
         android:layout_height="100dp"
         card_view:cardCornerRadius="2dp"
         card_view:cardElevation="4dp"
+        android:theme="@style/MyCardView"
+        android:layout_marginBottom="20dp"
         >
 
         <TextView
@@ -153,14 +155,16 @@
     <android.support.v7.widget.CardView
         xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:card_view="http://schemas.android.com/apk/res-auto"
-        android:foreground="?android:attr/selectableItemBackground"
         android:clickable="true"
         android:layout_margin="4dp"
         android:id="@+id/card_view1"
         android:layout_width="match_parent"
         android:layout_height="100dp"
         card_view:cardCornerRadius="2dp"
-        card_view:cardElevation="4dp">
+        card_view:cardElevation="4dp"
+        android:theme="@style/MyCardView"
+        >
+        <!--android:foreground="?android:attr/selectableItemBackground"-->
 
         <TextView
             android:id="@+id/total_summary_header"

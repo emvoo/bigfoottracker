@@ -8,6 +8,8 @@ import android.support.v4.app.Fragment;
 import android.support.v7.widget.CardView;
 import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
@@ -23,6 +25,9 @@ import java.util.List;
 import uk.ac.solent.marcinwisniewski.bigfoottracker.db.DatabaseHelper;
 import uk.ac.solent.marcinwisniewski.bigfoottracker.repositories.DateTimeRepository;
 
+/**
+ * Dashboard fragment.
+ */
 public class DashboardFragment extends Fragment {
     private TextView todayTotal, todayDistance, todayCalories, total, distance, calories;
     private static final String METRIC_TYPE = " m";
@@ -30,13 +35,13 @@ public class DashboardFragment extends Fragment {
     private int screenHeight;
     private int initialCardHeight;
 
-    public DashboardFragment() {
-    }
+    // constructor
+    public DashboardFragment() {}
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.dashboard_fragment, container, false);
-
+        setHasOptionsMenu(true);
         setWindowHeight();
 
         LinearLayout dashboard_view = view.findViewById(R.id.dashboard_view);
@@ -60,12 +65,8 @@ public class DashboardFragment extends Fragment {
         }
 
         for (CardView cardView:cardViews) {
-
             cardView.setOnClickListener(new View.OnClickListener() {
-
-
                 boolean visible;
-
                 @Override
                 public void onClick(final View v) {
                     int cardViewId = 0;
@@ -122,27 +123,30 @@ public class DashboardFragment extends Fragment {
                             }
                         }
                     }
-
-
                 }
             });
         }
 
         init(view);
         updateDashboardFields();
-//        final ViewGroup transitionsContainer = view.findViewById(R.id.card_view);
-//        final TextView text = transitionsContainer.findViewById(R.id.info_text_t);
-//        final CardView cardView = view.findViewById(R.id.card_view);
 
         setWindowHeight();
-
-
 
         return view;
     }
 
-    private void expand(final CardView cardView, int desiredHeight)
-    {
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        inflater.inflate(R.menu.share, menu);
+        super.onCreateOptionsMenu(menu, inflater);
+    }
+
+    /**
+     * Expands card view to full screen.
+     * @param cardView
+     * @param desiredHeight
+     */
+    private void expand(final CardView cardView, int desiredHeight) {
         ValueAnimator animator = ValueAnimator.ofInt(cardView.getMeasuredHeightAndState(),
                 desiredHeight);
         animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
@@ -157,8 +161,12 @@ public class DashboardFragment extends Fragment {
         animator.start();
     }
 
-    private void collapse(final CardView cardView, int desiredHeight)
-    {
+    /**
+     * Collapses card view to its initial height.
+     * @param cardView
+     * @param desiredHeight
+     */
+    private void collapse(final CardView cardView, int desiredHeight) {
         ValueAnimator animator = ValueAnimator.ofInt(cardView.getMeasuredHeightAndState(),
                 desiredHeight);
         animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
@@ -173,21 +181,20 @@ public class DashboardFragment extends Fragment {
         animator.start();
     }
 
-    private void setWindowHeight()
-    {
+    /**
+     * Sets window height
+     */
+    private void setWindowHeight() {
         WindowManager windowmanager = (WindowManager)getActivity().getSystemService(Context.WINDOW_SERVICE);
         DisplayMetrics dimension = new DisplayMetrics();
         windowmanager.getDefaultDisplay().getMetrics(dimension);
         screenHeight = (int) (0.78*dimension.heightPixels);
-//        screenHeight = dimension.heightPixels;
     }
 
-    public void showToast(int message)
-    {
-        Toast.makeText(getActivity(), ""+message, Toast.LENGTH_SHORT).show();
-    }
-
-
+    /**
+     * Initiates view values.
+     * @param view
+     */
     private void init(View view) {
         todayTotal = view.findViewById(R.id.todayTotal);
         todayDistance = view.findViewById(R.id.todayDistance);
@@ -198,38 +205,70 @@ public class DashboardFragment extends Fragment {
         db = ((MainActivity) getActivity()).db;
     }
 
+    /**
+     * Sets today's steps.
+     *
+     * @param todayTotal
+     */
     public void setTodayTotal(long todayTotal) {
         String value = todayTotal + " steps";
         this.todayTotal.setText(value);
     }
 
+    /**
+     * Sets today's distance
+     *
+     * @param todayDistance
+     */
     public void setTodayDistance(double todayDistance) {
         String value = todayDistance + METRIC_TYPE;
         this.todayDistance.setText(value);
     }
 
+    /**
+     * Sets today's calories burnt
+     *
+     * @param todayCalories
+     */
     public void setTodayCalories(int todayCalories) {
         String value = todayCalories + " kcal";
         this.todayCalories.setText(value);
     }
 
+    /**
+     * Sets total steps.
+     *
+     * @param total
+     */
     public void setTotal(long total) {
         String value = total + " steps";
         this.total.setText(value);
     }
 
+    /**
+     * Set total distance.
+     *
+     * @param distance
+     */
     public void setDistance(double distance) {
         String value = distance + METRIC_TYPE;
         this.distance.setText(value);
     }
 
+    /**
+     * Set total calories.
+     *
+     * @param calories
+     */
     public void setCalories(int calories) {
         String value = calories + " kcal";
         this.calories.setText(value);
     }
 
-    public void updateDashboardFields()
-    {
+    /**
+     * Updates dashboards fields.
+     */
+    public void updateDashboardFields() {
         // today's fields
         DateTimeRepository dtr = new DateTimeRepository();
         String today = dtr.parseDate(new Date());

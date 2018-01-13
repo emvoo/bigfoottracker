@@ -11,6 +11,9 @@ import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
 
+/**
+ * Service class to read steps from STEP_DETECTOR sensor.
+ */
 public class StepsService extends Service implements SensorEventListener {
 
     private SensorManager sensorManager;
@@ -22,10 +25,8 @@ public class StepsService extends Service implements SensorEventListener {
         super.onCreate();
 
         sensorManager = (SensorManager) this.getSystemService(Context.SENSOR_SERVICE);
-        if(sensorManager.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR) != null)
-        {
-            stepDetectorSensor =
-                    sensorManager.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR);
+        if(sensorManager.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR) != null) {
+            stepDetectorSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR);
             sensorManager.registerListener(this, stepDetectorSensor, SensorManager.SENSOR_DELAY_NORMAL);
         }
     }
@@ -51,6 +52,9 @@ public class StepsService extends Service implements SensorEventListener {
 
     }
 
+    /**
+     * Sends message to BroadcastReceiver in MainActivity
+     */
     private void sendMessage() {
         Intent intent = new Intent("new-step");
         intent.putExtra("message", "New step taken!");
