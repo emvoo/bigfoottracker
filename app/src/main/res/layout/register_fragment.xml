@@ -3,6 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="uk.ac.solent.marcinwisniewski.bigfoottracker.RegisterFragment"
+    android:id="@+id/register_view"
     >
     <!-- GRID -->
     <LinearLayout

@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.database.Cursor;
 import android.location.Location;
 import android.location.LocationListener;
@@ -30,11 +31,13 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.NotificationCompat;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -62,9 +65,8 @@ public class MainActivity extends AppCompatActivity {
     private ActionBarDrawerToggle mDrawerToggle;
 
     public static final int MULTIPLE_PERMISSIONS = 4;
-    private String[] permissions= new String[]{
+    private String[] permissions = new String[]{
             Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.CAMERA,
             Manifest.permission.ACCESS_COARSE_LOCATION,
             Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.INTERNET,
@@ -185,9 +187,9 @@ public class MainActivity extends AppCompatActivity {
         // load toolbar
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-
         // initiate a DrawerLayout
         drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+
         if (drawerLayout != null) {
             drawerLayout.setScrimColor(getResources().getColor(android.R.color.transparent));
 
@@ -338,10 +340,8 @@ public class MainActivity extends AppCompatActivity {
      * Share method.
      */
     public void share() {
-        Intent sharingIntent = new Intent(Intent.ACTION_SEND);
-        sharingIntent.setType("text/plain");
         String summary = getDailySummary();
-
+        Intent sharingIntent = new Intent(Intent.ACTION_SEND);
         sharingIntent.setType("text/plain");
         sharingIntent.putExtra(Intent.EXTRA_TEXT, summary);
         startActivity(sharingIntent);
@@ -371,6 +371,12 @@ public class MainActivity extends AppCompatActivity {
      * @param savedInstanceState
      */
     public void showDisplay(Bundle savedInstanceState) {
+        ListView navigation_items = (ListView) findViewById(R.id.navigation_items);
+        if (navigation_items != null) {
+            if(navigation_items.getVisibility() == View.INVISIBLE){
+                navigation_items.setVisibility(View.VISIBLE);
+            }
+        }
         // get number of users from db
         int count = db.getAllUsers().size();
         // check if there is account data in database
@@ -381,7 +387,12 @@ public class MainActivity extends AppCompatActivity {
                 makeTransition(new RegisterFragment(), false);
                 // hide side panel
                 if (drawerLayout != null) {
-                    drawerLayout.setDrawerLockMode(drawerLayout.LOCK_MODE_LOCKED_CLOSED);
+                    drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
+                }
+                if (navigation_items != null) {
+                    if(getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE){
+                        navigation_items.setVisibility(View.INVISIBLE);
+                    }
                 }
             } else {
                 continuesDisplaying(savedInstanceState);
